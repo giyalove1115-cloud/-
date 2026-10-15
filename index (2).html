@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>안심길 — 춘천 교통약자 안전경로 안내</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root{
+    --bg: #EEF2EF;
+    --paper: #FFFFFF;
+    --ink: #1E2C29;
+    --ink-soft: #51625D;
+    --teal: #2F6F62;
+    --teal-deep: #1F4D43;
+    --teal-pale: #DCEAE5;
+    --indigo: #3D4B7C;
+    --line: #D6DFDA;
+
+    --risk-green: #3C8F5C;
+    --risk-green-bg: #E3F3E8;
+    --risk-yellow: #C99A1E;
+    --risk-yellow-bg: #FBF1D8;
+    --risk-orange: #D07A28;
+    --risk-orange-bg: #FBE7D4;
+    --risk-red: #C6432F;
+    --risk-red-bg: #FAE0DB;
+
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(30,44,41,0.06), 0 6px 18px rgba(30,44,41,0.05);
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Noto Sans KR', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.55;
+    padding-bottom:48px;
+  }
+
+  .wrap{ max-width:480px; margin:0 auto; padding:20px 16px 0; }
+
+  header.top{ padding:22px 4px 18px; }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-mark{
+    width:42px; height:42px; border-radius:11px; background:var(--teal);
+    display:flex; align-items:center; justify-content:center; flex:none;
+  }
+  .brand-mark svg{ width:24px; height:24px; }
+  h1{ font-size:23px; font-weight:900; margin:0; letter-spacing:-0.01em; color:var(--teal-deep); }
+  .tagline{ margin:8px 0 0; font-size:14.5px; color:var(--ink-soft); font-weight:500; }
+  .region-tag{
+    display:inline-flex; align-items:center; gap:5px; margin-top:10px;
+    background:var(--teal-pale); color:var(--teal-deep); font-size:12px; font-weight:700;
+    padding:5px 10px; border-radius:999px;
+  }
+
+  .card{
+    background:var(--paper); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:18px 16px; margin-bottom:14px; border-left:4px solid var(--teal);
+  }
+  .card.map-card{ border-left-color: var(--indigo); padding:14px 14px 16px; }
+  .card.report-card{ border-left-color: var(--risk-orange); }
+  .card.log-card{ border-left-color: var(--ink-soft); }
+
+  .card h2{ font-size:14.5px; font-weight:700; margin:0 0 12px; color:var(--ink); }
+  .card h2 .num{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:20px; height:20px; border-radius:50%;
+    background:var(--teal-pale); color:var(--teal-deep);
+    font-size:12px; font-weight:900; margin-right:7px;
+  }
+
+  .profiles{ display:flex; gap:7px; flex-wrap:wrap; margin-bottom:14px; }
+  .chip{
+    border:1.5px solid var(--line); background:var(--paper);
+    padding:9px 12px; border-radius:999px; font-size:13.5px; font-weight:500;
+    cursor:pointer; color:var(--ink-soft); user-select:none; transition: all .15s ease;
+  }
+  .chip:hover{ border-color:var(--teal); }
+  .chip.active{ background:var(--teal); border-color:var(--teal); color:#fff; font-weight:700; }
+
+  .field{ margin-bottom:12px; }
+  .field label{ display:block; font-size:12.5px; font-weight:700; color:var(--ink-soft); margin-bottom:6px; }
+  select{
+    width:100%; padding:12px 12px; border-radius:10px;
+    border:1.5px solid var(--line); background:#FBFCFB;
+    font-family:inherit; font-size:15px; color:var(--ink); font-weight:500;
+    appearance:none; -webkit-appearance:none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%2351625D' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 14px center;
+  }
+  select:focus{ outline:2.5px solid var(--indigo); outline-offset:1px; }
+
+  .pick-row{ display:flex; gap:7px; margin-top:7px; }
+  .pick-btn{
+    flex:1; padding:9px 8px; border-radius:9px; border:1.5px dashed var(--line);
+    background:#FBFCFB; color:var(--ink-soft); font-family:inherit; font-size:12.5px;
+    font-weight:600; cursor:pointer; text-align:center;
+  }
+  .pick-btn.active{ border-color:var(--indigo); background:#EDEFF6; color:var(--indigo); border-style:solid; }
+  .pick-note{ font-size:11.5px; color:var(--ink-soft); margin-top:5px; }
+
+  .swap-btn{
+    display:block; margin:2px auto 10px; width:36px; height:36px; border-radius:50%;
+    border:1.5px solid var(--line); background:#FBFCFB;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .swap-btn:active{ transform:scale(0.92); }
+
+  .go-btn{
+    width:100%; margin-top:6px; padding:14px; border:none; border-radius:10px;
+    background:var(--teal); color:#fff; font-family:inherit;
+    font-size:15.5px; font-weight:700; cursor:pointer;
+    box-shadow:0 3px 10px rgba(47,111,98,0.28);
+  }
+  .go-btn:active{ transform:translateY(1px); }
+  .go-btn:disabled{ background:#A9B6B1; box-shadow:none; cursor:not-allowed; }
+
+  .map-frame{ position:relative; border-radius:10px; overflow:hidden; border:1px solid var(--line); }
+  #mapDiv{ width:100%; height:340px; background:#F4F7F5; }
+  #mapDiv.picking{ cursor:crosshair; }
+
+  .map-fallback{
+    position:absolute; inset:0; background:#F4F7F5; z-index:400;
+    display:none; align-items:center; justify-content:center; padding:20px;
+  }
+  .map-fallback.show{ display:flex; }
+  .map-fallback-inner{ text-align:center; max-width:320px; }
+  .map-fallback-ico{ font-size:30px; margin-bottom:8px; }
+  .map-fallback-inner p{ font-size:13px; color:var(--ink-soft); margin:6px 0; line-height:1.5; }
+  .map-fallback-inner p b{ color:var(--ink); }
+  .map-fallback-sub{ font-size:12px !important; color:var(--teal-deep) !important; font-weight:600; }
+
+  .locate-btn{
+    position:absolute; right:12px; bottom:12px; z-index:450;
+    width:42px; height:42px; border-radius:50%; border:none;
+    background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.25);
+    font-size:19px; display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .locate-btn:active{ transform:scale(0.94); }
+  .locate-btn.loading{ animation: spin 1s linear infinite; }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+
+  .me-dot-wrap{ width:22px; height:22px; display:flex; align-items:center; justify-content:center; }
+  .me-dot-pulse{
+    position:absolute; width:22px; height:22px; border-radius:50%;
+    background:rgba(61,75,124,0.35); animation: mepulse 1.8s ease-out infinite;
+  }
+  .me-dot-core{
+    width:14px; height:14px; border-radius:50%; background:var(--indigo);
+    border:3px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.35); position:relative;
+  }
+  @keyframes mepulse{
+    0%{ transform:scale(0.5); opacity:0.9; }
+    100%{ transform:scale(2.6); opacity:0; }
+  }
+
+  .legend{
+    display:flex; flex-wrap:wrap; gap:6px 12px; padding:10px 4px 2px;
+    font-size:11.5px; color:var(--ink-soft); font-weight:600;
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:5px; }
+  .legend i{ width:11px; height:11px; border-radius:3px; display:inline-block; }
+  .map-hint{ font-size:12px; color:var(--ink-soft); padding:8px 4px 0; font-weight:500; }
+
+  .route-summary{ display:none; }
+  .route-summary.show{ display:block; }
+  .summary-top{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; }
+  .summary-top .dist{ font-size:24px; font-weight:900; color:var(--teal-deep); }
+  .summary-top .time{ font-size:13px; color:var(--ink-soft); font-weight:600; }
+  .risk-badge{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 11px; border-radius:999px; font-size:12.5px; font-weight:700; margin-bottom:12px;
+  }
+  .risk-badge.green{ background:var(--risk-green-bg); color:var(--risk-green); }
+  .risk-badge.yellow{ background:var(--risk-yellow-bg); color:var(--risk-yellow); }
+  .risk-badge.orange{ background:var(--risk-orange-bg); color:var(--risk-orange); }
+  .risk-badge.red{ background:var(--risk-red-bg); color:var(--risk-red); }
+  .risk-badge i{ width:8px; height:8px; border-radius:50%; background:currentColor; }
+
+  .hazard-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:6px; }
+  .hazard-item{
+    display:flex; align-items:center; gap:9px; font-size:13.5px;
+    padding:9px 10px; border-radius:9px; background:#F7F8F6; border:1px solid var(--line);
+  }
+  .hazard-item .ico{ font-size:16px; flex:none; width:20px; text-align:center; }
+  .hazard-item b{ font-weight:700; }
+  .compare-note{
+    margin-top:10px; padding:10px 11px; border-radius:9px;
+    background:var(--teal-pale); color:var(--teal-deep); font-size:12.5px; font-weight:600;
+  }
+
+  .report-btn{
+    width:100%; padding:13px; border:none; border-radius:10px;
+    background:var(--risk-orange); color:#fff; font-family:inherit;
+    font-size:14.5px; font-weight:700; cursor:pointer;
+  }
+  .report-btn.active{ background:var(--ink); }
+
+  .report-form{ display:none; margin-top:14px; padding-top:14px; border-top:1px dashed var(--line); }
+  .report-form.show{ display:block; }
+  .report-loc{
+    font-size:13px; font-weight:600; color:var(--teal-deep); background:var(--teal-pale);
+    padding:9px 11px; border-radius:9px; margin-bottom:12px;
+  }
+  .hazard-toggles{ display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px; }
+  .toggle{
+    border:1.5px solid var(--line); border-radius:9px; padding:9px 11px;
+    font-size:13px; font-weight:600; color:var(--ink-soft); cursor:pointer;
+    display:flex; align-items:center; gap:6px; user-select:none;
+  }
+  .toggle.active{ border-color:var(--risk-orange); background:var(--risk-orange-bg); color:#8A4A1B; }
+  .form-btn-row{ display:flex; gap:8px; }
+  .submit-btn{
+    flex:1; padding:12px; border:none; border-radius:10px; background:var(--risk-orange);
+    color:#fff; font-family:inherit; font-size:14px; font-weight:700; cursor:pointer;
+  }
+  .cancel-btn{
+    flex:none; padding:12px 16px; border-radius:10px; border:1.5px solid var(--line);
+    background:#fff; color:var(--ink-soft); font-family:inherit; font-size:14px; font-weight:600; cursor:pointer;
+  }
+
+  .toast{
+    position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff; padding:12px 18px; border-radius:999px;
+    font-size:13.5px; font-weight:600; box-shadow:0 8px 20px rgba(0,0,0,0.25);
+    opacity:0; pointer-events:none; transition: all .25s ease; z-index:900;
+    max-width:88%; text-align:center;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .log-list{ display:flex; flex-direction:column; gap:9px; }
+  .log-empty{ font-size:13px; color:var(--ink-soft); padding:6px 2px; }
+  .log-item{
+    display:flex; gap:10px; padding:10px; border-radius:9px; background:#F7F8F6;
+    border:1px solid var(--line); font-size:13px;
+  }
+  .log-item .dot{ width:9px; height:9px; border-radius:50%; margin-top:5px; flex:none; }
+  .log-item .time{ display:block; font-size:11px; color:var(--ink-soft); margin-top:2px; }
+
+  .hz-pin{
+    width:22px; height:22px; border-radius:50% 50% 50% 0; transform:rotate(-45deg);
+    border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.35);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .hz-pin span{ transform:rotate(45deg); font-size:11px; }
+  .loc-dot{
+    width:14px; height:14px; border-radius:50%; background:#fff;
+    border:3px solid var(--indigo); box-shadow:0 1px 3px rgba(0,0,0,0.3);
+  }
+  .end-dot{
+    width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:14px; border:3px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.35);
+  }
+
+  .gps-box{
+    padding:12px; border-radius:10px; border:1.5px solid var(--line); background:#F1F4F2;
+    font-size:14px; font-weight:600; color:var(--ink-soft); line-height:1.45;
+  }
+  .gps-box.ok{ background:var(--teal-pale); border-color:var(--teal); color:var(--teal-deep); }
+  .gps-box.warn{ background:var(--risk-orange-bg); border-color:var(--risk-orange); color:#8A4A1B; }
+  .gps-box small{ display:block; font-weight:500; opacity:.85; margin-top:2px; font-size:12px; }
+  .lock-note{
+    font-size:12.5px; font-weight:600; color:#8A4A1B; background:var(--risk-yellow-bg);
+    padding:9px 11px; border-radius:9px; margin-bottom:12px;
+  }
+  .pick-btn:disabled{ opacity:.5; cursor:not-allowed; }
+  select:disabled{ opacity:.55; cursor:not-allowed; }
+  .test-link{
+    margin-top:7px; background:none; border:none; padding:4px 2px; font-family:inherit;
+    font-size:11.5px; color:var(--ink-soft); text-decoration:underline; cursor:pointer;
+  }
+  .route-status{ display:none; margin-top:10px; padding:10px 11px; border-radius:9px; font-size:12.5px; font-weight:600; line-height:1.5; }
+  .route-status.show{ display:block; }
+  .route-status.err{ background:var(--risk-red-bg); color:#8C2B1C; }
+  .route-status.info{ background:var(--teal-pale); color:var(--teal-deep); }
+  .route-status small{ display:block; font-weight:500; opacity:.8; margin-top:4px; word-break:break-all; }
+  .gps-help{ display:none; margin-top:8px; padding:11px 12px; border-radius:10px; background:#FFF8E8; border:1.5px solid #E8D39A; font-size:13px; line-height:1.55; color:#5B4A15; }
+  .gps-help.show{ display:block; }
+  .gps-help b{ color:#3F3208; }
+  .gps-help ol{ margin:6px 0 8px; padding-left:20px; }
+  .gps-help li{ margin-bottom:3px; }
+  .gps-retry{ width:100%; padding:11px; border-radius:9px; border:none; background:var(--teal); color:#fff; font-family:inherit; font-size:14px; font-weight:700; cursor:pointer; }
+  .test-link.on{ color:var(--teal-deep); font-weight:700; }
+  footer{ text-align:center; font-size:11px; color:var(--ink-soft); padding:18px 22px 4px; }
+
+  .leaflet-popup-content{ font-family:'Noto Sans KR', sans-serif; font-size:13px; }
+</style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2F6F62">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="안심길">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 20c3-6 5-9 8-9s5 3 8 9" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="6" r="3" fill="#fff"/></svg>
+      </div>
+      <h1>안심길</h1>
+    </div>
+    <p class="tagline">노약자와 이동이 불편한 분들을 위한 가장 안전한 길을 안내해요.</p>
+    <span class="region-tag">📍 춘천시 전용 서비스</span>
+  </header>
+
+  <!-- 1. 이동유형 + 출발/도착 -->
+  <section class="card">
+    <h2><span class="num">1</span>누구를 위한 길인가요? 먼저 선택해 주세요</h2>
+    <div class="profiles" id="profileChips"></div>
+
+    <div class="lock-note" id="lockNote">먼저 위에서 이용 유형을 선택하면 도착지를 고를 수 있어요.</div>
+
+    <div class="field">
+      <label>출발지 (현재 위치로 고정)</label>
+      <div class="gps-box" id="gpsBox">🧭 GPS 신호를 찾는 중이에요...<small>위치 권한을 허용해 주세요.</small></div>
+      <div class="gps-help" id="gpsHelp">
+        <div id="gpsHelpBody"></div>
+        <button class="gps-retry" id="gpsRetryBtn">🔄 GPS 다시 시도</button>
+      </div>
+      <button class="test-link" id="gpsTestBtn">GPS가 잘 되는지 궁금하신가요? 춘천시청 위치로 앱 기능 테스트하기</button>
+    </div>
+
+    <div class="field">
+      <label for="endSel">도착지</label>
+      <select id="endSel" disabled></select>
+      <div class="pick-row">
+        <button class="pick-btn" id="endPickBtn" disabled>📍 지도에서 직접 선택</button>
+      </div>
+    </div>
+
+    <button class="go-btn" id="findBtn" disabled>안전한 길 찾기</button>
+    <div class="route-status" id="routeStatus"></div>
+  </section>
+
+  <!-- 2. 지도 -->
+  <section class="card map-card">
+    <h2><span class="num">2</span>지도에서 확인하기</h2>
+    <div class="map-frame">
+      <div id="mapDiv"></div>
+      <button id="locateBtn" class="locate-btn" title="내 위치 보기" aria-label="내 위치 보기">🧭</button>
+      <div id="mapFallback" class="map-fallback">
+        <div class="map-fallback-inner">
+          <div class="map-fallback-ico">🗺️</div>
+          <p><b>지도를 불러오지 못했어요.</b><br>채팅 미리보기 화면은 보안 때문에 외부 지도·경로 서버 접속이 막혀 있을 수 있어요.</p>
+          <p class="map-fallback-sub">아래 파일을 내려받아 브라우저에서 직접 열면 실제 지도와 경로가 정상적으로 나와요.</p>
+        </div>
+      </div>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--risk-green)"></i>안전</span>
+      <span><i style="background:var(--risk-yellow)"></i>주의</span>
+      <span><i style="background:var(--risk-orange)"></i>위험</span>
+      <span><i style="background:var(--risk-red)"></i>매우 위험</span>
+    </div>
+    <p class="map-hint" id="mapHint">실제 도로망을 따라 걷기 경로를 계산해요. 위험 구간 근처는 색으로 표시돼요.</p>
+  </section>
+
+  <!-- 3. 경로 요약 -->
+  <section class="card route-summary" id="summaryCard">
+    <h2><span class="num">3</span>경로 안내</h2>
+    <div class="summary-top">
+      <span class="dist" id="distText">-</span>
+      <span class="time" id="timeText"></span>
+    </div>
+    <div id="riskBadgeWrap"></div>
+    <div class="hazard-list" id="hazardList"></div>
+    <div class="compare-note" id="compareNote"></div>
+  </section>
+
+  <footer>실제 보행 도로망(OpenStreetMap) 기반 시제품이며, 표시된 위험 구간은 예시 데이터입니다. 계단·경사 정보가 실제와 다를 수 있으니 현장 상황을 꼭 확인하세요.</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+
+  /* ================= 춘천 지역 경계 ================= */
+  var BOUNDS = { south:37.78, north:37.96, west:127.62, east:127.84 };
+  function inChuncheon(lat,lng){
+    return lat>=BOUNDS.south && lat<=BOUNDS.north && lng>=BOUNDS.west && lng<=BOUNDS.east;
+  }
+
+  /* ================= 프리셋 장소(춘천) ================= */
+  var LOCATIONS = [
+    {id:'cityhall',  name:'춘천시청',        lat:37.8813, lng:127.7298},
+    {id:'station',   name:'춘천역',          lat:37.8848, lng:127.7169},
+    {id:'namstation',name:'남춘천역',        lat:37.8610, lng:127.7293},
+    {id:'terminal',  name:'춘천종합버스터미널', lat:37.8626, lng:127.7288},
+    {id:'kangwonuniv',name:'강원대학교 정문', lat:37.8697, lng:127.7458},
+    {id:'myeongdong',name:'명동거리',        lat:37.8810, lng:127.7303},
+    {id:'skywalk',   name:'소양강스카이워크', lat:37.9106, lng:127.7295},
+    {id:'provincial',name:'강원도청',        lat:37.8823, lng:127.7280},
+    {id:'hospital',  name:'춘천의료원',      lat:37.8730, lng:127.7159},
+    {id:'hupyeong',  name:'후평동 주민센터', lat:37.8748, lng:127.7503}
+  ];
+  var locById = {}; LOCATIONS.forEach(function(l){ locById[l.id]=l; });
+
+  var HAZARD_META = [
+    {key:'slope',        label:'내리막·오르막 경사', icon:'⛰️'},
+    {key:'construction',  label:'공사 중',            icon:'🚧'},
+    {key:'broken',        label:'보도블록 파손',      icon:'🧱'},
+    {key:'parking',       label:'불법주차·장애물',    icon:'🚗'}
+  ];
+
+  var PROFILES = [
+    {id:'general',   name:'일반 노약자', icon:'🧓', speed:40, tip:'약 300m마다 벤치나 쉼터에서 쉬어 가며 천천히 걸으세요.',
+      w:{slope:1.4, construction:2.0, broken:1.6, parking:1.2}},
+    {id:'wheelchair',name:'휠체어', icon:'♿', speed:55, tip:'계단·턱 정보는 완전히 반영되지 않아요. 경사로와 엘리베이터 위치를 현장에서 꼭 확인하세요.',
+      w:{slope:4.5, construction:5.0, broken:1.8, parking:3.2}},
+    {id:'walker',    name:'보행보조기', icon:'🦯', speed:30, tip:'보도 턱과 울퉁불퉁한 구간에서는 속도를 줄이고, 약 200m마다 쉬어 가세요.',
+      w:{slope:2.6, construction:2.4, broken:2.2, parking:1.6}},
+    {id:'visual',    name:'시각장애인', icon:'🦮', speed:40, tip:'점자블록과 음향신호기를 함께 확인하며 이동하세요. 가능하면 동행인과 함께 이용하세요.',
+      w:{slope:1.0, construction:4.0, broken:4.2, parking:2.4}}
+  ];
+  function getProfile(){ return PROFILES.filter(function(x){return x.id===state.profile;})[0]; }
+
+  // 예시 위험 데이터(춘천 내 임의 지점) + 이후 사용자 신고가 여기 추가됨
+  var hazards = [
+    {id:'h1', lat:37.8807, lng:127.7307, keys:['broken'],           source:'example'},
+    {id:'h2', lat:37.8843, lng:127.7178, keys:['construction'],     source:'example'},
+    {id:'h3', lat:37.9098, lng:127.7288, keys:['slope'],            source:'example'},
+    {id:'h4', lat:37.8630, lng:127.7280, keys:['parking'],          source:'example'},
+    {id:'h5', lat:37.8694, lng:127.7450, keys:['slope','broken'],   source:'example'}
+  ];
+
+  var state = {
+    profile: null,       // 유형을 선택하기 전에는 도착지 선택 불가
+    gps: null,           // 출발지: GPS 현재 위치 {lat,lng,name}
+    endCustom: null,
+    pickMode: null,      // null | 'end'
+    currentRouteCoords: null
+  };
+
+  /* ================= 위험도 계산 ================= */
+  function severityScore(keys){
+    var s = 1;
+    if(keys.indexOf('slope')>-1) s += 1.5;
+    if(keys.indexOf('construction')>-1) s += 3;
+    if(keys.indexOf('broken')>-1) s += 2;
+    if(keys.indexOf('parking')>-1) s += 1;
+    return s;
+  }
+  function severityCategory(keys){
+    var s = severityScore(keys);
+    if(s <= 1.5) return 'green';
+    if(s <= 3)   return 'yellow';
+    if(s <= 4.5) return 'orange';
+    return 'red';
+  }
+  var CAT_COLOR = { green:'#3C8F5C', yellow:'#C99A1E', orange:'#D07A28', red:'#C6432F' };
+  var CAT_LABEL = { green:'안전', yellow:'주의', orange:'위험', red:'매우 위험' };
+  var CAT_RANK  = { green:0, yellow:1, orange:2, red:3 };
+
+  function haversine(lat1,lng1,lat2,lng2){
+    var R = 6371000;
+    var dLat = (lat2-lat1) * Math.PI/180;
+    var dLng = (lng2-lng1) * Math.PI/180;
+    var a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180) *
+            Math.sin(dLng/2)*Math.sin(dLng/2);
+    var c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R*c;
+  }
+
+  function profileWeight(keys, profileId){
+    var p = PROFILES.filter(function(x){return x.id===profileId;})[0];
+    var mult = 1;
+    keys.forEach(function(k){ mult += p.w[k]*0.5; });
+    return mult;
+  }
+
+  var PROXIMITY_M = 45; // 위험 구간으로 간주하는 반경(m)
+
+  function nearestHazard(lat,lng){
+    var best=null, bestDist=Infinity;
+    hazards.forEach(function(h){
+      var d = haversine(lat,lng,h.lat,h.lng);
+      if(d<bestDist){ bestDist=d; best=h; }
+    });
+    return {hazard:best, dist:bestDist};
+  }
+
+  function routeExposure(coords, profileId){
+    var score = 0;
+    var seen = {};
+    hazards.forEach(function(h){
+      var minD = Infinity;
+      for(var i=0;i<coords.length;i++){
+        var d = haversine(coords[i][0],coords[i][1],h.lat,h.lng);
+        if(d<minD) minD=d;
+        if(minD<3) break;
+      }
+      if(minD<=PROXIMITY_M){ score += profileWeight(h.keys, profileId); }
+    });
+    return score;
+  }
+
+  function downsample(coords, maxPts){
+    if(coords.length<=maxPts) return coords;
+    var step = Math.ceil(coords.length/maxPts);
+    var out = [];
+    for(var i=0;i<coords.length;i+=step) out.push(coords[i]);
+    if(out[out.length-1]!==coords[coords.length-1]) out.push(coords[coords.length-1]);
+    return out;
+  }
+
+  /* ================= 지도 초기화 ================= */
+  var map = L.map('mapDiv', {
+    center:[37.8813,127.7298], zoom:13, minZoom:12, maxZoom:18,
+    maxBounds:[[BOUNDS.south,BOUNDS.west],[BOUNDS.north,BOUNDS.east]], maxBoundsViscosity:1.0
+  });
+  var tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom:19
+  }).addTo(map);
+
+  var mapFallbackEl = document.getElementById('mapFallback');
+  var anyTileLoaded = false;
+  var tileErrorCount = 0;
+  tileLayer.on('load', function(){ anyTileLoaded = true; mapFallbackEl.classList.remove('show'); });
+  tileLayer.on('tileerror', function(){
+    tileErrorCount++;
+    if(!anyTileLoaded && tileErrorCount>=4){ mapFallbackEl.classList.add('show'); }
+  });
+  // 일정 시간 내 타일이 한 장도 안 뜨면(요청 자체가 막힌 경우) 안내 문구를 띄움
+  setTimeout(function(){
+    if(!anyTileLoaded) mapFallbackEl.classList.add('show');
+  }, 5000);
+
+  var locLayer = L.layerGroup().addTo(map);
+  var hazardLayer = L.layerGroup().addTo(map);
+  var routeLayer = L.layerGroup().addTo(map);
+  var endpointLayer = L.layerGroup().addTo(map);
+  var myLocLayer = L.layerGroup().addTo(map);
+  var myLocationMarker = null, myAccuracyCircle = null;
+
+  function meIcon(){
+    return L.divIcon({
+      className:'', iconSize:[22,22], iconAnchor:[11,11],
+      html:'<div class="me-dot-wrap"><div class="me-dot-pulse"></div><div class="me-dot-core"></div></div>'
+    });
+  }
+
+  /* ===== 출발지: GPS 현재 위치로 고정 (테스트 후에는 자동으로 실제 위치로 복귀) ===== */
+  var gpsBox = document.getElementById('gpsBox');
+  var gpsHelp = document.getElementById('gpsHelp');
+  var gpsHelpBody = document.getElementById('gpsHelpBody');
+  var gpsTestBtn = document.getElementById('gpsTestBtn');
+  var TEST_LABEL = 'GPS가 잘 되는지 궁금하신가요? 춘천시청 위치로 앱 기능 테스트하기';
+  var TEST_SECONDS = 60;
+  var gpsWatchId = null, gpsFirst = true, testMode = false, testTimer = null, testTick = null;
+
+  function clearRouteView(){
+    routeLayer.clearLayers(); endpointLayer.clearLayers();
+    state.currentRouteCoords = null;
+    document.getElementById('summaryCard').classList.remove('show');
+    setStatus('', '');
+  }
+
+  function applyGPS(lat,lng,acc,isTest){
+    if(!inChuncheon(lat,lng)){
+      state.gps = null;
+      myLocLayer.clearLayers();
+      gpsBox.className = 'gps-box warn';
+      gpsBox.innerHTML = '📍 현재 위치가 춘천 지역 밖이에요.<small>이 서비스는 춘천에서만 이용할 수 있어요. (기능만 확인하려면 아래 테스트를 눌러 보세요)</small>';
+      return;
+    }
+    state.gps = {lat:lat, lng:lng, name:'현재 위치'};
+    gpsBox.className = 'gps-box ok';
+    gpsBox.innerHTML = '🧭 현재 위치 (GPS)' + (isTest ? ' · 테스트 위치(춘천시청)' : '') +
+      '<small>' + lat.toFixed(5) + ', ' + lng.toFixed(5) + '</small>';
+    myLocLayer.clearLayers();
+    L.circle([lat,lng], {radius:acc||30, color:'#3D4B7C', weight:1, fillColor:'#3D4B7C', fillOpacity:0.08}).addTo(myLocLayer);
+    L.marker([lat,lng], {icon:meIcon(), zIndexOffset:1000}).addTo(myLocLayer).bindPopup('내 위치(출발지)');
+    if(gpsFirst){ map.setView([lat,lng], 15); gpsFirst = false; }
+  }
+
+  function showGpsHelp(code){
+    var title, steps;
+    var common = '<li>그래도 안 되면 파일을 <b>크롬(Chrome)·사파리</b> 같은 일반 브라우저에서 직접 열어 주세요. 카카오톡·메신저·클라우드의 미리보기 화면에서는 위치 기능이 막혀 있는 경우가 많아요.</li>';
+    if(code===1){
+      title = '📍 위치 권한이 꺼져 있어요.';
+      steps = '<li>주소창 왼쪽의 <b>자물쇠(또는 설정) 아이콘 → 권한 → 위치 → 허용</b>으로 바꿔 주세요.</li>' +
+              '<li>아이폰은 <b>설정 → 개인정보 보호 → 위치 서비스</b>를 켜고 Safari(또는 사용 중인 브라우저)를 "앱 사용 중 허용"으로 바꿔 주세요.</li>' +
+              '<li>바꾼 뒤 아래 <b>GPS 다시 시도</b>를 눌러 주세요.</li>' + common;
+    } else if(code===2){
+      title = '📡 현재 위치를 알 수 없어요.';
+      steps = '<li>휴대폰의 <b>위치(GPS)</b>가 켜져 있는지, 비행기 모드가 꺼져 있는지 확인해 주세요.</li>' +
+              '<li>위치 정확도를 <b>높음(GPS+Wi-Fi+모바일)</b>으로 설정해 주세요.</li>' + common;
+    } else if(code===3){
+      title = '⏳ GPS 신호가 약해 아직 위치를 못 찾았어요.';
+      steps = '<li>실내나 지하에서는 신호가 약해요. <b>창가나 야외</b>로 나가 잠시 기다려 주세요.</li>' +
+              '<li>계속 찾는 중이라 신호가 잡히면 자동으로 표시돼요. 급하면 <b>GPS 다시 시도</b>를 눌러 주세요.</li>' + common;
+    } else {
+      title = '⚠️ 이 화면에서는 GPS를 사용할 수 없어요.';
+      steps = common + '<li>컴퓨터에서는 GPS가 없어 위치가 부정확할 수 있어요. 휴대폰에서 이용해 주세요.</li>' +
+              '<li>웹사이트 주소(https)로 올려서 접속하면 위치 기능이 더 안정적으로 작동해요.</li>';
+    }
+    gpsHelpBody.innerHTML = '<b>' + title + '</b><ol>' + steps + '</ol>';
+    gpsHelp.classList.add('show');
+  }
+
+  function startGPS(){
+    if(gpsWatchId!==null){ navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+    gpsFirst = true;
+    gpsHelp.classList.remove('show');
+    gpsBox.className = 'gps-box';
+    gpsBox.innerHTML = '🧭 GPS 신호를 찾는 중이에요...<small>위치 권한을 허용해 주세요.</small>';
+    if(!navigator.geolocation || window.isSecureContext===false){
+      gpsBox.className = 'gps-box warn';
+      gpsBox.innerHTML = '이 화면에서는 위치 확인을 쓸 수 없어요.';
+      showGpsHelp(0);
+      return;
+    }
+    gpsWatchId = navigator.geolocation.watchPosition(function(pos){
+      if(testMode) return;
+      gpsHelp.classList.remove('show');
+      applyGPS(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy, false);
+    }, function(err){
+      if(testMode) return;
+      state.gps = null;
+      myLocLayer.clearLayers();
+      gpsBox.className = 'gps-box warn';
+      gpsBox.innerHTML = '현재 위치를 가져오지 못했어요.<small>아래 안내를 따라 해 보세요.</small>';
+      showGpsHelp(err ? err.code : 0);
+    }, {enableHighAccuracy:true, maximumAge:3000, timeout:15000});
+  }
+
+  function enterTest(){
+    testMode = true;
+    if(gpsWatchId!==null){ navigator.geolocation && navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+    gpsHelp.classList.remove('show');
+    clearRouteView();
+    gpsFirst = true;
+    applyGPS(37.8813, 127.7298, 30, true);
+    var left = TEST_SECONDS;
+    gpsTestBtn.classList.add('on');
+    gpsTestBtn.textContent = '↩ 실제 내 위치(GPS)로 돌아가기 (' + left + '초 후 자동 복귀)';
+    testTick = setInterval(function(){
+      left--;
+      gpsTestBtn.textContent = '↩ 실제 내 위치(GPS)로 돌아가기 (' + left + '초 후 자동 복귀)';
+    }, 1000);
+    testTimer = setTimeout(exitTest, TEST_SECONDS*1000);
+    showToast('테스트 위치로 앱을 확인해 보세요. ' + TEST_SECONDS + '초 뒤 자동으로 내 위치로 돌아와요.');
+  }
+
+  function exitTest(){
+    if(!testMode) return;
+    testMode = false;
+    clearTimeout(testTimer); clearInterval(testTick);
+    gpsTestBtn.classList.remove('on');
+    gpsTestBtn.textContent = TEST_LABEL;
+    state.gps = null;
+    myLocLayer.clearLayers();
+    clearRouteView();
+    startGPS();
+    showToast('실제 내 위치(GPS)로 돌아왔어요.');
+  }
+
+  gpsTestBtn.addEventListener('click', function(){ if(testMode) exitTest(); else enterTest(); });
+  document.getElementById('gpsRetryBtn').addEventListener('click', startGPS);
+  startGPS();
+
+  document.getElementById('locateBtn').addEventListener('click', function(){
+    if(state.gps){ map.setView([state.gps.lat, state.gps.lng], Math.max(map.getZoom(),15)); }
+    else { showToast('아직 현재 위치를 확인하지 못했어요.'); }
+  });
+
+  function locDivIcon(){
+    return L.divIcon({ className:'', html:'<div class="loc-dot"></div>', iconSize:[14,14], iconAnchor:[7,7] });
+  }
+  LOCATIONS.forEach(function(l){
+    L.marker([l.lat,l.lng], {icon:locDivIcon()}).addTo(locLayer).bindPopup('<b>'+l.name+'</b>');
+  });
+
+  function hazardIcon(cat){
+    var emoji = {green:'✅',yellow:'⚠️',orange:'⚠️',red:'⛔'}[cat];
+    var html = '<div class="hz-pin" style="background:'+CAT_COLOR[cat]+'"><span>'+emoji+'</span></div>';
+    return L.divIcon({ className:'', html:html, iconSize:[22,22], iconAnchor:[11,20] });
+  }
+
+  function renderHazards(){
+    hazardLayer.clearLayers();
+    hazards.forEach(function(h){
+      var cat = severityCategory(h.keys);
+      var labels = h.keys.map(function(k){ return HAZARD_META.filter(function(m){return m.key===k;})[0].label; }).join(' · ');
+      var tag = h.source==='report' ? '주민 신고' : '예시 데이터';
+      var m = L.marker([h.lat,h.lng], {icon:hazardIcon(cat)}).addTo(hazardLayer);
+      m.bindPopup('<b>'+labels+'</b><br>위험도: '+CAT_LABEL[cat]+'<br><span style="color:#888">'+tag+'</span>');
+    });
+  }
+  renderHazards();
+
+  function endIcon(kind){
+    var bg = kind==='start' ? '#2F6F62' : '#C6432F';
+    var label = kind==='start' ? 'S' : 'E';
+    return L.divIcon({ className:'', html:'<div class="end-dot" style="background:'+bg+';color:#fff;">'+label+'</div>', iconSize:[26,26], iconAnchor:[13,13] });
+  }
+
+  /* ================= 프로필 칩 ================= */
+  var profileChipsEl = document.getElementById('profileChips');
+  PROFILES.forEach(function(p){
+    var chip = document.createElement('div');
+    chip.className = 'chip' + (p.id===state.profile ? ' active' : '');
+    chip.textContent = p.icon + ' ' + p.name;
+    chip.addEventListener('click', function(){
+      state.profile = p.id;
+      unlockDestination();
+      document.querySelectorAll('.chip').forEach(function(c){c.classList.remove('active');});
+      chip.classList.add('active');
+      if(state.currentRouteCoords) computeAndRenderRoute();
+    });
+    profileChipsEl.appendChild(chip);
+  });
+
+  /* ================= 도착지 select ================= */
+  var endSel = document.getElementById('endSel');
+  var endPickBtn = document.getElementById('endPickBtn');
+
+  function fillSelect(sel){
+    sel.innerHTML = '';
+    var ph = document.createElement('option'); ph.value=''; ph.textContent='도착지를 선택하세요';
+    sel.appendChild(ph);
+    LOCATIONS.forEach(function(l){
+      var o = document.createElement('option'); o.value=l.id; o.textContent=l.name;
+      sel.appendChild(o);
+    });
+    var custom = document.createElement('option');
+    custom.value = 'custom'; custom.disabled = true; custom.id = sel.id+'CustomOpt';
+    custom.textContent = '직접 선택한 위치';
+    sel.appendChild(custom);
+  }
+  fillSelect(endSel);
+  endSel.value = '';
+
+  endSel.addEventListener('change', function(){
+    if(state.currentRouteCoords && endSel.value) computeAndRenderRoute();
+  });
+
+  function unlockDestination(){
+    endSel.disabled = false;
+    endPickBtn.disabled = false;
+    document.getElementById('findBtn').disabled = false;
+    document.getElementById('lockNote').style.display = 'none';
+  }
+
+  function getPoint(kind){
+    if(kind==='start') return state.gps;
+    if(endSel.value==='custom' && state.endCustom) return state.endCustom;
+    var l = locById[endSel.value];
+    return l ? {lat:l.lat, lng:l.lng, name:l.name} : null;
+  }
+
+  /* ================= 지도에서 도착지 선택 / 신고 위치 선택 ================= */
+  var mapDiv = document.getElementById('mapDiv');
+
+  function setPickMode(mode){
+    state.pickMode = mode;
+    endPickBtn.classList.toggle('active', mode==='end');
+    mapDiv.classList.toggle('picking', !!mode);
+    var hint = document.getElementById('mapHint');
+    if(mode==='end') hint.textContent = '지도를 눌러 도착지를 선택하세요. (춘천 지역만 가능)';
+    else hint.textContent = '실제 도로망을 따라 걷기 경로를 계산해요. 위험 구간 근처는 색으로 표시돼요.';
+  }
+
+  endPickBtn.addEventListener('click', function(){
+    if(!state.profile){ showToast('먼저 이용 유형을 선택해 주세요.'); return; }
+    setPickMode(state.pickMode==='end' ? null : 'end');
+  });
+
+  map.on('click', function(e){
+    var lat = e.latlng.lat, lng = e.latlng.lng;
+    if(!inChuncheon(lat,lng)){
+      if(state.pickMode) showToast('춘천 지역 내에서만 선택할 수 있어요.');
+      return;
+    }
+    if(state.pickMode==='end'){
+      state.endCustom = {lat:lat, lng:lng, name:'선택한 위치'};
+      var o2 = document.getElementById('endSelCustomOpt');
+      o2.disabled=false; o2.textContent='선택한 위치 ('+lat.toFixed(4)+', '+lng.toFixed(4)+')';
+      endSel.value='custom';
+      setPickMode(null);
+      showToast('도착지를 지정했어요. "안전한 길 찾기"를 눌러 주세요.');
+      if(state.currentRouteCoords) computeAndRenderRoute();
+    }
+  });
+
+  /* ================= 경로 계산 ================= */
+  var findBtn = document.getElementById('findBtn');
+  findBtn.addEventListener('click', computeAndRenderRoute);
+
+  var VALHALLA_OPT = {
+    general:    {use_hills:0.2, step_penalty:60,  walkway_factor:0.7, alley_factor:5,  walking_speed:2.4},
+    wheelchair: {type:'wheelchair', use_hills:0, walkway_factor:0.6, alley_factor:10, walking_speed:3.3},
+    walker:     {use_hills:0,   step_penalty:200, walkway_factor:0.6, alley_factor:8,  walking_speed:1.8},
+    visual:     {use_hills:0.3, step_penalty:60,  walkway_factor:0.5, alley_factor:20, walking_speed:2.4}
+  };
+
+  function timedFetch(url, ms){
+    return new Promise(function(resolve, reject){
+      var done = false;
+      var timer = setTimeout(function(){ if(!done){ done=true; reject(new Error('시간 초과')); } }, ms);
+      fetch(url).then(function(res){
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      }).then(function(j){
+        if(!done){ done=true; clearTimeout(timer); resolve(j); }
+      }).catch(function(e){
+        if(!done){ done=true; clearTimeout(timer); reject(e); }
+      });
+    });
+  }
+
+  function decodePoly6(str){
+    var i=0, lat=0, lng=0, out=[], b, shift, result;
+    while(i<str.length){
+      shift=0; result=0;
+      do{ b=str.charCodeAt(i++)-63; result|=(b&0x1f)<<shift; shift+=5; }while(b>=0x20);
+      lat += (result&1) ? ~(result>>1) : (result>>1);
+      shift=0; result=0;
+      do{ b=str.charCodeAt(i++)-63; result|=(b&0x1f)<<shift; shift+=5; }while(b>=0x20);
+      lng += (result&1) ? ~(result>>1) : (result>>1);
+      out.push([lat/1e6, lng/1e6]);
+    }
+    return out;
+  }
+
+  // 1순위: Valhalla 보행자 경로 (유형별 옵션, 휠체어는 계단 제외·경사 제한)
+  function fetchValhalla(a,b){
+    var body = {
+      locations:[{lat:a.lat, lon:a.lng},{lat:b.lat, lon:b.lng}],
+      costing:'pedestrian',
+      costing_options:{ pedestrian: VALHALLA_OPT[state.profile] },
+      alternates:2
+    };
+    var url = 'https://valhalla1.openstreetmap.de/route?json=' + encodeURIComponent(JSON.stringify(body));
+    return timedFetch(url, 9000).then(function(json){
+      if(!json.trip || json.trip.status!==0) throw new Error('경로 없음');
+      var trips = [json.trip];
+      (json.alternates||[]).forEach(function(x){ if(x.trip && x.trip.status===0) trips.push(x.trip); });
+      return trips.map(function(t){
+        var coords = [];
+        t.legs.forEach(function(l){ coords = coords.concat(decodePoly6(l.shape)); });
+        return { coords:coords, distance:t.summary.length*1000 };
+      });
+    });
+  }
+
+  function osrmParse(json){
+    if(json.code!=='Ok' || !json.routes || !json.routes.length) throw new Error('경로 없음');
+    return json.routes.map(function(r){
+      return { coords:r.geometry.coordinates.map(function(c){ return [c[1], c[0]]; }), distance:r.distance };
+    });
+  }
+  function osrmQuery(a,b){
+    return a.lng+','+a.lat+';'+b.lng+','+b.lat + '?alternatives=true&overview=full&geometries=geojson';
+  }
+  // 2순위: OSRM 보행자 전용 서버
+  function fetchOSRMFoot(a,b){
+    return timedFetch('https://routing.openstreetmap.de/routed-foot/route/v1/foot/'+osrmQuery(a,b), 9000).then(osrmParse);
+  }
+  // 3순위: BRouter 트레킹(도보) 프로필
+  function fetchBRouter(a,b){
+    var url = 'https://brouter.de/brouter?lonlats='+a.lng+','+a.lat+'|'+b.lng+','+b.lat+'&profile=trekking&alternativeidx=0&format=geojson';
+    return timedFetch(url, 12000).then(function(json){
+      var f = json.features && json.features[0];
+      if(!f) throw new Error('경로 없음');
+      return [{ coords:f.geometry.coordinates.map(function(c){ return [c[1], c[0]]; }),
+                distance:parseFloat(f.properties['track-length']) }];
+    });
+  }
+  // 4순위: OSRM 공개 데모 서버
+  function fetchOSRMDemo(a,b){
+    return timedFetch('https://router.project-osrm.org/route/v1/foot/'+osrmQuery(a,b), 9000).then(osrmParse);
+  }
+
+  // 모든 서버에 동시에 요청하고, 우선순위가 높은 서버의 결과부터 사용 (직선 연결 없음)
+  function fetchRoutes(a,b){
+    var errs = [];
+    var providers = [
+      ['Valhalla', fetchValhalla], ['OSRM-foot', fetchOSRMFoot],
+      ['BRouter', fetchBRouter], ['OSRM', fetchOSRMDemo]
+    ].map(function(p){
+      var pr = p[1](a,b).then(function(r){ r.source = p[0]; return r; }, function(e){
+        errs.push(p[0] + ': ' + (e && e.message ? e.message : e)); throw e;
+      });
+      pr.catch(function(){});
+      return pr;
+    });
+    var chain = Promise.reject();
+    providers.forEach(function(pr){ chain = chain.catch(function(){ return pr; }); });
+    return chain.catch(function(){
+      var err = new Error('all failed'); err.details = errs; throw err;
+    });
+  }
+
+  var routeStatusEl = document.getElementById('routeStatus');
+  function setStatus(kind, html){
+    routeStatusEl.className = 'route-status' + (kind ? ' show ' + kind : '');
+    routeStatusEl.innerHTML = html || '';
+  }
+
+  function computeAndRenderRoute(){
+    if(!state.profile){ showToast('먼저 이용 유형을 선택해 주세요.'); return; }
+    var a = getPoint('start'), b = getPoint('end');
+    if(!a){ showToast('현재 위치(GPS)를 아직 확인하지 못했어요. 위치 권한을 확인해 주세요.'); return; }
+    if(!b){ showToast('도착지를 선택해 주세요.'); return; }
+    if(a.lat===b.lat && a.lng===b.lng){
+      showToast('출발지와 도착지를 다르게 선택해 주세요.');
+      return;
+    }
+    findBtn.disabled = true; findBtn.textContent = '경로 계산 중...';
+    setStatus('info', '보행 도로망으로 안전한 경로를 계산하는 중이에요...');
+
+    fetchRoutes(a,b).then(function(routes){
+      try{
+        handleRoutes(routes, a, b, false);
+        setStatus('info', '✅ 보행 도로망 기준 경로예요. <small>경로 서버: ' + routes.source + '</small>');
+      }catch(err){
+        setStatus('err', '경로를 화면에 표시하는 중 문제가 생겼어요.<small>' + (err && err.message) + '</small>');
+      }
+    }, function(err){
+      routeLayer.clearLayers(); endpointLayer.clearLayers();
+      state.currentRouteCoords = null;
+      document.getElementById('summaryCard').classList.remove('show');
+      var d = (err && err.details) ? err.details : [];
+      var blocked = d.length && d.every(function(x){ return /Failed to fetch|NetworkError|Load failed|network/i.test(x); });
+      var msg = blocked
+        ? '경로 서버에 접속하지 못했어요. 카카오톡·클라우드 등 <b>앱 안의 미리보기 화면</b>에서는 외부 접속이 막힐 수 있어요. 파일을 <b>크롬(Chrome)</b> 같은 브라우저에서 직접 열어 주세요.'
+        : '안전한 보행 경로를 찾지 못했어요. 도착지를 도로 가까운 곳으로 바꾸거나, 잠시 후 다시 시도해 주세요.';
+      setStatus('err', msg + '<small>' + d.join(' / ') + '</small>');
+    }).then(function(){
+      findBtn.disabled = false; findBtn.textContent = '안전한 길 찾기';
+    });
+  }
+
+  function handleRoutes(routes, a, b, isFallback){
+    var profileId = state.profile;
+    var scored = routes.map(function(r){
+      return { r:r, exposure: routeExposure(r.coords, profileId) };
+    });
+    scored.sort(function(x,y){
+      if(x.exposure !== y.exposure) return x.exposure - y.exposure;
+      return x.r.distance - y.r.distance;
+    });
+    var chosen = scored[0].r;
+    var primary = routes[0]; // OSRM 기본(최단/최속) 경로
+
+    state.currentRouteCoords = chosen.coords;
+
+    drawRoute(chosen.coords, a, b);
+    renderSummary(chosen, primary, a, b, isFallback);
+  }
+
+  function segCategory(lat1,lng1,lat2,lng2){
+    var midLat = (lat1+lat2)/2, midLng=(lng1+lng2)/2;
+    var nh = nearestHazard(midLat,midLng);
+    if(nh.hazard && nh.dist<=PROXIMITY_M) return severityCategory(nh.hazard.keys);
+    return 'green';
+  }
+
+  function drawRoute(coordsFull, a, b){
+    routeLayer.clearLayers();
+    endpointLayer.clearLayers();
+
+    var coords = downsample(coordsFull, 140);
+
+    for(var i=0;i<coords.length-1;i++){
+      var p1=coords[i], p2=coords[i+1];
+      var cat = segCategory(p1[0],p1[1],p2[0],p2[1]);
+      L.polyline([p1,p2], {
+        color: CAT_COLOR[cat], weight:6, opacity:0.92, lineCap:'round'
+      }).addTo(routeLayer);
+    }
+
+    L.marker([a.lat,a.lng], {icon:endIcon('start')}).addTo(endpointLayer).bindPopup('출발: '+(a.name||''));
+    L.marker([b.lat,b.lng], {icon:endIcon('end')}).addTo(endpointLayer).bindPopup('도착: '+(b.name||''));
+
+    var bounds = L.latLngBounds(coordsFull.map(function(c){return [c[0],c[1]];}));
+    map.fitBounds(bounds, {padding:[26,26]});
+  }
+
+  function renderSummary(chosen, primary, a, b, isFallback){
+    var card = document.getElementById('summaryCard');
+    card.classList.add('show');
+
+    var distM = Math.round(chosen.distance);
+    document.getElementById('distText').textContent = (distM>=1000 ? (distM/1000).toFixed(1)+'km' : distM+'m');
+    var mins = Math.max(1, Math.round(distM/getProfile().speed)); // 유형별 이동 속도 가정(분속 m)
+    document.getElementById('timeText').textContent = '도보 약 ' + mins + '분';
+
+    // 경로 주변 위험요소 집계 + 최고 위험도
+    var worst = 'green';
+    var hazardCounts = {};
+    var coords = chosen.coords;
+    hazards.forEach(function(h){
+      var minD = Infinity;
+      for(var i=0;i<coords.length;i++){
+        var d = haversine(coords[i][0],coords[i][1],h.lat,h.lng);
+        if(d<minD) minD=d;
+      }
+      if(minD<=PROXIMITY_M){
+        var cat = severityCategory(h.keys);
+        if(CAT_RANK[cat]>CAT_RANK[worst]) worst = cat;
+        h.keys.forEach(function(k){ hazardCounts[k]=(hazardCounts[k]||0)+1; });
+      }
+    });
+
+    var badgeWrap = document.getElementById('riskBadgeWrap');
+    badgeWrap.innerHTML = '<span class="risk-badge '+worst+'"><i></i>경로 내 최고 위험도 · '+CAT_LABEL[worst]+'</span>';
+
+    var listEl = document.getElementById('hazardList');
+    listEl.innerHTML = '';
+    var keys = Object.keys(hazardCounts);
+    if(keys.length===0){
+      var ok = document.createElement('div');
+      ok.className='hazard-item';
+      ok.innerHTML = '<span class="ico">✅</span><span>경로 근처에 신고된 위험 요소가 없어요.</span>';
+      listEl.appendChild(ok);
+    } else {
+      HAZARD_META.forEach(function(h){
+        if(hazardCounts[h.key]){
+          var item = document.createElement('div');
+          item.className='hazard-item';
+          item.innerHTML = '<span class="ico">'+h.icon+'</span><span><b>'+h.label+'</b> 관련 지점 '+hazardCounts[h.key]+'곳 근처를 지나요</span>';
+          listEl.appendChild(item);
+        }
+      });
+    }
+
+    var tipItem = document.createElement('div');
+    tipItem.className = 'hazard-item';
+    tipItem.innerHTML = '<span class="ico">' + getProfile().icon + '</span><span><b>' + getProfile().name + '</b> 이용 팁 · ' + getProfile().tip + '</span>';
+    listEl.appendChild(tipItem);
+
+    var note = document.getElementById('compareNote');
+    if(isFallback){
+      note.textContent = '실시간 경로 API에 연결하지 못해 두 지점 사이를 직선으로 표시했어요. 네트워크 상태를 확인한 뒤 다시 시도해 보세요.';
+    } else {
+      var extra = Math.round(chosen.distance - primary.distance);
+      if(extra > 15){
+        note.textContent = '가장 빠른 길보다 약 ' + extra + 'm 더 걷지만, 위험 구간을 최대한 피한 경로예요.';
+      } else {
+        note.textContent = '가장 빠른 길이면서 동시에 가장 안전한 경로예요.';
+      }
+    }
+  }
+
+  /* ================= 토스트 ================= */
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, 2600);
+  }
+
+})();
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js').catch(function(e){ console.error('SW 등록 실패', e); });
+    });
+  }
+</script>
+</body>
+</html>
